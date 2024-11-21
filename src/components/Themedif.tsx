@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Dispatch } from "react";
 
-import "./Theme.css";
-
-import "./Difficulty.css";
+import CategorySelector from "./CategorySelector";
+import DifficultySelector from "./DifficultySelector";
 
 export interface Question {
 	_id: string;
@@ -18,32 +17,35 @@ export interface Question {
 const Themedif = ({
 	setData,
 	data,
-}: { setData: Dispatch<Question[] | null>; data: Question[] | null }) => {
+}: {
+	setData: Dispatch<Question[] | null>;
+	data: Question[] | null;
+}) => {
 	const [category, setCategory] = useState<string | null>(null);
 	const [difficulty, setDifficulty] = useState<string | null>(null);
 	const [step, setStep] = useState(1);
 
+	// Stabiliser buildApiUrl avec useCallback
+	const buildApiUrl = useCallback(() => {
+		let url = import.meta.env.VITE_API_URL;
+
+		if (category) {
+			url += `?category=${category}`;
+		}
+
+		if (difficulty) {
+			url += category
+				? `&difficulty=${difficulty}`
+				: `?difficulty=${difficulty}`;
+		}
+
+		// console.log("API URL générée :", url);
+		return url;
+	}, [category, difficulty]); // Ajout des dépendances
+
 	useEffect(() => {
-		// Fonction pour construire l'URL filtrée avec les paramètres
-		const buildApiUrl = () => {
-			let url = import.meta.env.VITE_API_URL; // URL de base de l'API
-
-			if (category) {
-				url += `?category=${category}`;
-			}
-
-			if (difficulty) {
-				url += category
-					? `&difficulty=${difficulty}`
-					: `?difficulty=${difficulty}`;
-			}
-
-			return url;
-		};
-
-		// Fonction pour récupérer les données depuis l'API
 		const fetchData = async () => {
-			const apiUrl = buildApiUrl();
+			const apiUrl = buildApiUrl(); // Appelle la fonction stabilisée
 
 			try {
 				const response = await fetch(apiUrl);
@@ -52,6 +54,7 @@ const Themedif = ({
 				}
 
 				const result = await response.json();
+				// console.log("Données reçues :", result);
 
 				if (
 					result &&
@@ -65,167 +68,30 @@ const Themedif = ({
 			}
 		};
 
-		fetchData(); // Appeler fetchData dans useEffect
-	}, [category, difficulty, setData]); // Ajouter category et difficulty comme dépendances
+		fetchData();
+	}, [buildApiUrl, setData]); // Ajouter buildApiUrl comme dépendance stabilisée
+
 	return (
 		<div>
-			{/* Sélecteur pour la catégorie */}
 			{step === 1 && (
-				<div>
-					<h1>Thématique</h1>
-					<section className="category-container">
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"art_litterature"}
-							onClick={() => setStep(2)}
-							className="category-button"
-						>
-							Art litterature
-							<img
-								src="src\images\Logo-littérature-sans-fond.png"
-								alt="Art et litterature"
-								className="category-img-size"
-							/>
-						</button>
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"tv_cinema"}
-							onClick={() => setStep(2)}
-							className="category-button"
-						>
-							Cinema
-							<img
-								src="src\images\Logo-cinéma-sans-fond.png"
-								alt="Cinema"
-								className="category-img-size"
-							/>
-						</button>
-					</section>
-					<section className="category-container">
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"sport"}
-							onClick={() => setStep(2)}
-							className="category-button"
-						>
-							Sport
-							<img
-								src="src\images\Logo-sport-ballon-sans-fond.png"
-								alt="Sport"
-								className="category-img-size"
-							/>
-						</button>
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"jeux_videos"}
-							onClick={() => setStep(2)}
-							className="category-button"
-						>
-							Jeux videos
-							<img
-								src="src\images\logo-jeux_vidéos-sans-fond.png"
-								alt="Jeux videos"
-								className="category-img-size"
-							/>
-						</button>
-					</section>
-					<section className="category-container">
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"musique"}
-							onClick={() => setStep(2)}
-							className="category-button"
-						>
-							Musique
-							<img
-								src="src\images\logo-musique-sans-fond.png"
-								alt="Musique"
-								className="category-img-size"
-							/>
-						</button>
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"culture_generale"}
-							onClick={() => setStep(2)}
-							className="category-button"
-						>
-							Culture generale
-							<img
-								src="src/images/logo-cultureG-sans-fond.png"
-								alt="Culture generale"
-								className="category-img-size"
-							/>
-						</button>
-					</section>
-				</div>
+				<CategorySelector
+					onSelectCategory={(selectedCategory) => {
+						// console.log("Catégorie sélectionnée :", selectedCategory);
+						setCategory(selectedCategory);
+						setStep(2);
+					}}
+				/>
 			)}
-
-			{/* Sélecteur pour la difficulté */}
 			{step === 2 && (
-				<div className="difficulty">
-					<h1>Difficulté</h1>
-					<div className="choice">
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"facile"}
-							onClick={() => setStep(3)}
-						>
-							<img src="src\images\1etoile-sans-fond.png" alt="facile" />
-						</button>
-
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"normal"}
-							onClick={() => setStep(3)}
-						>
-							<img src="src\images\2etoiles-sans-fond.png" alt="normal" />
-						</button>
-
-						<button
-							type="button"
-							onSelect={(e) =>
-								setCategory((e.target as HTMLButtonElement).value || null)
-							}
-							value={"difficile"}
-							onClick={() => setStep(3)}
-						>
-							<img src="src\images\3etoiles-sans-fond.png" alt="difficile" />
-						</button>
-					</div>
-
-					<div className="back">
-						<button type="button" onClick={() => setStep(1)}>
-							<img src="src\images\Back-sans-fond.png" alt="facile" />
-						</button>
-					</div>
-				</div>
+				<DifficultySelector
+					onSelectDifficulty={(selectedDifficulty) => {
+						// console.log("Difficulté sélectionnée :", selectedDifficulty);
+						setDifficulty(selectedDifficulty);
+						setStep(3);
+					}}
+					goBack={() => setStep(1)}
+				/>
 			)}
-
-			{/* Affiche des questions */}
 		</div>
 	);
 };
